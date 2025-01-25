@@ -134,7 +134,7 @@ class Mapping extends Table
             foreach ($items as $item) {
                 $item[$property->getForeignColumn()] = $data[$property->getLocalColumn()];
 
-                $mapping->insert($item)
+                $mapping->insert($item);
             }
         }
         
