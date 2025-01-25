@@ -99,12 +99,6 @@ class Mapping extends Table
             return true;
         }
 
-        $useTransaction = !$this->db->getConnection()->inTransaction();
-
-        if ($useTransaction) {
-            $this->db->startTransaction();
-        }
-
         if ($this->definition->isAutoIncrement()) {
             // Force the database to assign sequence numbers
             unset($base[$this->definition->getPrimaryKey()[0]]);
@@ -112,7 +106,7 @@ class Mapping extends Table
 
         if (!parent::insert($base)) {
             // Transaction already cancelled by the statement handler
-            return false;
+            throw new \Exception('Error inserting: duplicate keys.');
         }
 
         if ($this->definition->isAutoIncrement()) {
@@ -140,17 +134,10 @@ class Mapping extends Table
             foreach ($items as $item) {
                 $item[$property->getForeignColumn()] = $data[$property->getLocalColumn()];
 
-                if (!$mapping->insert($item)) {
-                    // Transaction already cancelled by the statement handler
-                    return false;
-                }
+                $mapping->insert($item)
             }
         }
-
-        if ($useTransaction) {
-            $this->db->closeTransaction();
-        }
-
+        
         $this->dispatch('inserted', $data, [
             $data
         ]);
@@ -187,34 +174,16 @@ class Mapping extends Table
         if (!$original = $this->findOne()) {
             return false;
         }
+        
+        $deleteIds = $this->replace($data, $original);
+        $this->delete($deleteIds);
 
-        $useTransaction = !$this->db->getConnection()->inTransaction();
+        $this->dispatch('updated', $data, [
+            $data,
+            $original
+        ]);
 
-        if ($useTransaction) {
-            $this->db->startTransaction();
-        }
-
-        try {
-            $deleteIds = $this->replace($data, $original);
-            $this->delete($deleteIds);
-
-            if ($useTransaction) {
-                $this->db->closeTransaction();
-            }
-
-            $this->dispatch('updated', $data, [
-                $data,
-                $original
-            ]);
-
-            return true;
-        } catch (\Exception $e) {
-            if ($useTransaction) {
-                $this->db->cancelTransaction();
-            }
-
-            return false;
-        }
+        return true;
     }
 
     /**
@@ -257,20 +226,10 @@ class Mapping extends Table
             $ids = $this->collectPrimary($original, $ids);
         }
 
-        try {
-            $this->db->startTransaction();
-            $this->delete($ids);
+        $this->delete($ids);
 
-            $this->db->closeTransaction();
-
-            foreach ($data as $item) {
-                $this->dispatch('removed', $item);
-            }
-
-            return true;
-        } catch (\Exception $exception) {
-            $this->db->cancelTransaction();
-            return false;
+        foreach ($data as $item) {
+            $this->dispatch('removed', $item);
         }
     }
 
