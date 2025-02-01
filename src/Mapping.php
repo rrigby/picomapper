@@ -398,7 +398,12 @@ class Mapping extends Table
 
                     $query->closeOr();
 
-                    $result = $deletion ? $query->isNull($deletion)->update([$deletion => gmdate('Y-m-d H:i:s')]) : $query->remove();
+                    $result = $deletion
+                        ? $query->isNull($deletion)->update(array_merge(
+                            [$deletion => gmdate('Y-m-d H:i:s')],
+                            $this->definition->getDeletionData(),
+                        ))
+                        : $query->remove();
                     if (!$result) {
                         throw new \Exception('Failed to delete records.');
                     }
