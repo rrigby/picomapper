@@ -7,47 +7,52 @@ class Definition
     /**
      * @var string
      */
-    private $table;
+    private string $table;
 
     /**
      * @var string[]
      */
-    private $primaryKey = [];
+    private array $primaryKey = [];
 
     /**
      * @var bool
      */
-    private $autoIncrement = false;
+    private bool $autoIncrement = false;
 
     /**
      * @var bool
      */
-    private $readOnly = false;
+    private bool $readOnly = false;
 
     /**
      * @var string[]
      */
-    private $columns = [];
+    private array $columns = [];
 
     /**
      * @var Property[]
      */
-    private $properties = [];
+    private array $properties = [];
 
     /**
      * @var string|null
      */
-    private $deletionTimestamp;
+    private ?string $deletionTimestamp;
 
     /**
      * @var array
      */
-    private $creationData = [];
+    private array $deletionData = [];
 
     /**
      * @var array
      */
-    private $modificationData = [];
+    private array $creationData = [];
+
+    /**
+     * @var array
+     */
+    private array $modificationData = [];
 
     /**
      * Definition constructor.
@@ -66,7 +71,7 @@ class Definition
      *
      * @return Definition
      */
-    public function useAutoIncrement()
+    public function useAutoIncrement(): self
     {
         if (count($this->primaryKey) > 1) {
             throw new \LogicException('Auto increment can only be used for non-composite primary keys.');
@@ -81,7 +86,7 @@ class Definition
      *
      * @return Definition
      */
-    public function readOnly()
+    public function readOnly(): self
     {
         $this->readOnly = true;
         return $this;
@@ -93,7 +98,7 @@ class Definition
      * @param string ...$columns
      * @return Definition
      */
-    public function withColumns(string ...$columns)
+    public function withColumns(string ...$columns): self
     {
         $this->columns = array_merge($this->columns, $columns);
         return $this;
@@ -108,7 +113,7 @@ class Definition
      * @param string     $localColumn
      * @return Definition
      */
-    public function withOne(Definition $definition, string $name, string $foreignColumn, string $localColumn = 'id')
+    public function withOne(Definition $definition, string $name, string $foreignColumn, string $localColumn = 'id'): self
     {
         $this->properties[] = new Property($name, false, $definition, $localColumn, $foreignColumn);
         return $this;
@@ -123,7 +128,7 @@ class Definition
      * @param string     $localColumn
      * @return Definition
      */
-    public function withMany(Definition $definition, string $name, string $foreignColumn, string $localColumn = 'id')
+    public function withMany(Definition $definition, string $name, string $foreignColumn, string $localColumn = 'id'): self
     {
         $this->properties[] = new Property($name, true, $definition, $localColumn, $foreignColumn);
         return $this;
@@ -141,7 +146,7 @@ class Definition
      * @param string $joinLocalColumn
      * @return Definition
      */
-    public function withManyByJoin(Definition $definition, string $name, string $foreignColumn, string $localColumn, string $joinTable, string $joinForeignColumn, string $joinLocalColumn)
+    public function withManyByJoin(Definition $definition, string $name, string $foreignColumn, string $localColumn, string $joinTable, string $joinForeignColumn, string $joinLocalColumn): self
     {
         $property = new Property($name, true, $definition, $localColumn, $foreignColumn);
         $property->join($joinTable, $joinLocalColumn, $joinForeignColumn);
@@ -156,9 +161,21 @@ class Definition
      * @param string $column
      * @return Definition
      */
-    public function withDeletionTimestamp(string $column)
+    public function withDeletionTimestamp(string $column): self
     {
         $this->deletionTimestamp = $column;
+        return $this;
+    }
+
+    /**
+     * Sets an array of table data to be included when a record is removed.
+     *
+     * @param array $data
+     * @return Definition
+     */
+    public function withDeletionData(array $data): self
+    {
+        $this->deletionData = $data;
         return $this;
     }
 
@@ -168,7 +185,7 @@ class Definition
      * @param array $data
      * @return Definition
      */
-    public function withCreationData(array $data)
+    public function withCreationData(array $data): self
     {
         $this->creationData = $data;
         return $this;
@@ -180,7 +197,7 @@ class Definition
      * @param array $data
      * @return Definition
      */
-    public function withModificationData(array $data)
+    public function withModificationData(array $data): self
     {
         $this->modificationData = $data;
         return $this;
@@ -191,7 +208,7 @@ class Definition
      *
      * @return string
      */
-    public function getTable()
+    public function getTable(): string
     {
         return $this->table;
     }
@@ -201,7 +218,7 @@ class Definition
      *
      * @return string[]
      */
-    public function getPrimaryKey()
+    public function getPrimaryKey(): array
     {
         return $this->primaryKey;
     }
@@ -211,7 +228,7 @@ class Definition
      *
      * @return bool
      */
-    public function isReadOnly()
+    public function isReadOnly(): bool
     {
         return $this->readOnly;
     }
@@ -221,7 +238,7 @@ class Definition
      *
      * @return bool
      */
-    public function isAutoIncrement()
+    public function isAutoIncrement(): bool
     {
         return $this->autoIncrement;
     }
@@ -231,7 +248,7 @@ class Definition
      *
      * @return string[]
      */
-    public function getColumns()
+    public function getColumns(): array
     {
         return $this->columns;
     }
@@ -241,7 +258,7 @@ class Definition
      *
      * @return Property[]
      */
-    public function getProperties()
+    public function getProperties(): array
     {
         return $this->properties;
     }
@@ -252,9 +269,19 @@ class Definition
      *
      * @return null|string
      */
-    public function getDeletionTimestamp()
+    public function getDeletionTimestamp(): ?string
     {
         return $this->deletionTimestamp;
+    }
+
+    /**
+     * Returns an array of table data to be included when a record is removed.
+     *
+     * @return array
+     */
+    public function getDeletionData(): array
+    {
+        return $this->deletionData;
     }
 
     /**
@@ -262,7 +289,7 @@ class Definition
      *
      * @return array
      */
-    public function getCreationData()
+    public function getCreationData(): array
     {
         return $this->creationData;
     }
@@ -272,7 +299,7 @@ class Definition
      *
      * @return array
      */
-    public function getModificationData()
+    public function getModificationData(): array
     {
         return $this->modificationData;
     }
