@@ -37,7 +37,7 @@ class Definition
     /**
      * @var string|null
      */
-    private ?string $deletionTimestamp;
+    private ?string $deletionTimestamp = null;
 
     /**
      * @var array
