@@ -188,7 +188,7 @@ class Mapping extends Table
 
         foreach ($primaryKey as $column) {
             if (!array_key_exists($column, $data)) {
-                return false;
+                throw new \Exception('Failed to update record. Missing primary key column: ' . $column);
             }
 
             if (is_null($data[$column])) {
@@ -199,7 +199,7 @@ class Mapping extends Table
         }
 
         if (!$original = $this->findOne()) {
-            return false;
+            throw new \Exception('Failed to update record. Original not found.');
         }
 
         $useTransaction = !$this->db->getConnection()->inTransaction();
@@ -208,27 +208,19 @@ class Mapping extends Table
             $this->db->startTransaction();
         }
 
-        try {
-            $deleteIds = $this->replace($data, $original);
-            $this->delete($deleteIds);
+        $deleteIds = $this->replace($data, $original);
+        $this->delete($deleteIds);
 
-            if ($useTransaction) {
-                $this->db->closeTransaction();
-            }
-
-            $this->dispatch('updated', $data, [
-                $data,
-                $original
-            ]);
-
-            return true;
-        } catch (\Exception $e) {
-            if ($useTransaction) {
-                $this->db->cancelTransaction();
-            }
-
-            return false;
+        if ($useTransaction) {
+            $this->db->closeTransaction();
         }
+
+        $this->dispatch('updated', $data, [
+            $data,
+            $original
+        ]);
+
+        return true;
     }
 
     /**
@@ -243,7 +235,7 @@ class Mapping extends Table
 
         foreach ($primaryKey as $column) {
             if (!array_key_exists($column, $data)) {
-                return false;
+                throw new \Exception('Failed to save record. Missing primary key column: ' . $column);
             }
 
             if (is_null($data[$column])) {
@@ -271,21 +263,17 @@ class Mapping extends Table
             $ids = $this->collectPrimary($original, $ids);
         }
 
-        try {
-            $this->db->startTransaction();
-            $this->delete($ids);
+        $this->db->startTransaction();
 
-            $this->db->closeTransaction();
+        $this->delete($ids);
 
-            foreach ($data as $item) {
-                $this->dispatch('removed', $item);
-            }
+        $this->db->closeTransaction();
 
-            return true;
-        } catch (\Exception $exception) {
-            $this->db->cancelTransaction();
-            return false;
+        foreach ($data as $item) {
+            $this->dispatch('removed', $item);
         }
+
+        return true;
     }
 
     /**
