@@ -192,7 +192,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    public function  testReadOnlyInsert()
+    public function testReadOnlyInsert()
     {
         $customer = [
             'id' => 10,
@@ -288,8 +288,59 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         } catch (SQLException $exception) {
         }
 
+        $this->assertFalse($this->db->getConnection()->inTransaction());
+
         $inserted = $this->getMapping()->eq('id', 3)->findOne();
         $this->assertNull($inserted);
+    }
+
+    public function testInsertDuplicateThrowsException()
+    {
+        $this->expectException(SQLException::class);
+        $this->expectExceptionMessage('UNIQUE constraint failed');
+
+        $customer = [
+            'id' => 1,
+            'name' => 'Dave Matthews',
+            'orders' => []
+        ];
+
+        $this->getMapping()->insert($customer);
+    }
+
+    public function testInsertDuplicateChildrenThrowsException()
+    {
+        $this->expectException(SQLException::class);
+        $this->expectExceptionMessage('UNIQUE constraint failed');
+
+        $customer = [
+            'id' => 3,
+            'name' => 'Dave Matthews',
+            'orders' => [
+                [
+                    'id' => 4,
+                    'date_created' => '2018-02-01',
+                    'discount' => [
+                        'description' => 'Dessert Discount',
+                        'amount' => 20
+                    ],
+                    'items' => [
+                        [
+                            'id' => 7,
+                            'description' => 'Ice Cream',
+                            'amount' => 400
+                        ],
+                        [
+                            'id' => 7,
+                            'description' => 'Cookies',
+                            'amount' => '230'
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $this->getMapping()->insert($customer);
     }
 
     public function testUpdateRollback()
@@ -297,11 +348,82 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $customer = $this->getMapping()->eq('id', 1)->findOne();
         $original = $customer;
 
-        $customer['orders'][0]['items'][] = ['id' => '3'];
-        $this->getMapping()->update($customer);
+        $customer['orders'][0]['items'] = array_merge(
+            $customer['orders'][0]['items'],
+            [
+                [
+                    'id' => 7,
+                    'description' => 'Ice Cream',
+                    'amount' => 400
+                ],
+                [
+                    'id' => 7,
+                    'description' => 'Cookies',
+                    'amount' => '230'
+                ]
+            ]
+        );
+
+        try {
+            $this->getMapping()->update($customer);
+        } catch (SQLException $exception) {
+        }
 
         $updated = $this->getMapping()->eq('id', 1)->findOne();
         $this->assertEquals($original, $updated);
+    }
+
+    public function testUpdateRollbackThrowsExceptionWhenInsertingDuplicateChildrenRecords()
+    {
+        $this->expectException(SQLException::class);
+        $this->expectExceptionMessage('UNIQUE constraint failed');
+
+        $customer = $this->getMapping()->eq('id', 1)->findOne();
+
+        $customer['orders'][0]['items'] = array_merge(
+            $customer['orders'][0]['items'],
+            [
+                [
+                    'id' => 7,
+                    'description' => 'Ice Cream',
+                    'amount' => 400
+                ],
+                [
+                    'id' => 7,
+                    'description' => 'Cookies',
+                    'amount' => '230'
+                ]
+            ]
+        );
+
+        $this->getMapping()->update($customer);
+    }
+
+    public function testUpdateRollbackDoesNotErrorWhenUpdatingDuplicateChildrenRecords()
+    {
+        $customer = $this->getMapping()->eq('id', 1)->findOne();
+        $original = $customer;
+
+        $customer['orders'][0]['items'] = array_merge(
+            $customer['orders'][0]['items'],
+            [
+                [
+                    'id' => 3,
+                    'description' => 'Ice Cream',
+                    'amount' => 400
+                ],
+                [
+                    'id' => 3,
+                    'description' => 'Ice Cream',
+                    'amount' => 400
+                ]
+            ]
+        );
+
+        $this->getMapping()->update($customer);
+
+        $updated = $this->getMapping()->eq('id', 1)->findOne();
+        $this->assertNotEquals($original, $updated);
     }
 
     public function testPrefixAndRemoveTableName()
