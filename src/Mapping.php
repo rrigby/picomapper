@@ -627,8 +627,8 @@ class Mapping extends Table
      * Dispatches an event to registered hooks.
      *
      * @param string $event
-     * @param array $data
-     * @param array $args
+     * @param array  $data
+     * @param array  $args
      */
     private function dispatch(string $event, array $data, $args = [])
     {
