@@ -1,5 +1,5 @@
 {
-  "name": "tithely/picomapper",
+  "name": "rrigby/picomapper",
   "description": "Minimalist data mapper built on PicoDb",
   "type": "library",
   "license": "MIT",
