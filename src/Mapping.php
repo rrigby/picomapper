@@ -552,7 +552,7 @@ class Mapping extends Table
     {
         $table = $this->definition->getTable();
         $primaryKey = $this->definition->getPrimaryKey();
-        $deletion = $this->definition->getDeletionTimestamp();
+        $deletion = $this->definition->getDeletionTimestamp() ?? '';
         $deletionData = $this->definition->getDeletionData();
 
         $item = [];
