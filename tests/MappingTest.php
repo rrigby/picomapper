@@ -739,6 +739,80 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('2018-01-01', $employee['orders'][0]['date_created']);
     }
 
+    public function testRemoveWithoutDeletionTimestampHardDeletes()
+    {
+        $this->db->execute('CREATE TABLE widgets (id INTEGER PRIMARY KEY, name TEXT)');
+        $this->db->execute("INSERT INTO widgets (id, name) VALUES (1, 'Widget')");
+
+        $definition = (new Definition('widgets'))->withColumns('id', 'name');
+        $mapping = new Mapping($this->db, $definition);
+
+        $mapping->eq('id', 1)->remove();
+
+        $this->assertEquals(0, $this->db->table('widgets')->count());
+    }
+
+    public function testSaveInsertsWhenRecordDoesNotExist()
+    {
+        $this->db->execute('CREATE TABLE widgets (id INTEGER PRIMARY KEY, name TEXT)');
+
+        $definition = (new Definition('widgets'))->withColumns('id', 'name');
+        (new Mapping($this->db, $definition))->save(['id' => 1, 'name' => 'New']);
+
+        $this->assertEquals('New', $this->db->table('widgets')->eq('id', 1)->findOneColumn('name'));
+    }
+
+    public function testSaveUpdatesWhenRecordExists()
+    {
+        $this->db->execute('CREATE TABLE widgets (id INTEGER PRIMARY KEY, name TEXT)');
+        $this->db->execute("INSERT INTO widgets (id, name) VALUES (1, 'Original')");
+
+        $definition = (new Definition('widgets'))->withColumns('id', 'name');
+        (new Mapping($this->db, $definition))->save(['id' => 1, 'name' => 'Renamed']);
+
+        $this->assertEquals('Renamed', $this->db->table('widgets')->eq('id', 1)->findOneColumn('name'));
+    }
+
+    public function testUseAutoIncrementThrowsForCompositePrimaryKey()
+    {
+        $this->expectException(\LogicException::class);
+
+        (new Definition('some_table', ['a', 'b']))->useAutoIncrement();
+    }
+
+    public function testRemoveWithCompositePrimaryKey()
+    {
+        $definition = new Definition('orders_fulfillments', ['order_id', 'employee_id']);
+        $mapping = new Mapping($this->db, $definition);
+
+        $mapping->eq('order_id', 1)->eq('employee_id', 1)->remove();
+
+        $this->assertEquals(0, $this->db->table('orders_fulfillments')->eq('order_id', 1)->count());
+    }
+
+    public function testFindAllExcludesSoftDeletedChildRecords()
+    {
+        $this->db->table('orders')->eq('id', 1)->update(['date_deleted' => '2024-01-01']);
+
+        $customer = $this->getMapping()->eq('id', 1)->findOne();
+
+        $this->assertCount(1, $customer['orders']);
+        $this->assertEquals(3, $customer['orders'][0]['id']);
+    }
+
+    public function testInsertAppliesCreationData()
+    {
+        $this->db->execute('CREATE TABLE widgets (id INTEGER PRIMARY KEY, name TEXT, created_at TEXT)');
+
+        $definition = (new Definition('widgets'))
+            ->withColumns('id', 'name')
+            ->withCreationData(['created_at' => '2024-01-01']);
+
+        (new Mapping($this->db, $definition))->insert(['id' => 1, 'name' => 'Widget']);
+
+        $this->assertEquals('2024-01-01', $this->db->table('widgets')->eq('id', 1)->findOneColumn('created_at'));
+    }
+
     /**
      * Returns a new mapping for testing.
      *
