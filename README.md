@@ -3,19 +3,19 @@ PicoMapper
 
 PicoMapper is a minimalist data mapper built on PicoDb.
 
-![Run Tests](https://github.com/tithely/picomapper/workflows/Run%20Tests/badge.svg)
+![Run Tests](https://github.com/rrigby/picomapper/workflows/Run%20Tests/badge.svg)
 
 Features
 --------
 
-- Built on [PicoDb](https://github.com/elvanto/picodb)
+- Built on [PicoDb](https://github.com/rrigby/picodb)
 - No configuration files
 - License: MIT
 
 Requirements
 ------------
 
-- PHP >= 7.3
+- PHP >= 8.0
 - PDO extension
 - Sqlite, Mssql, Mysql or Postgresql
 
@@ -25,7 +25,7 @@ Documentation
 ### Installation
 
 ```bash
-composer require tithely/picomapper
+composer require rrigby/picomapper
 ```
 
 ### Setup
@@ -80,7 +80,7 @@ $post = (new Definition('posts'))
     ->withOne($author, 'author', 'id', 'author_id')
     ->withMany($comment, 'comments', 'post_id')
     ->withCreationData(['date_entered' => gmdate('Y-m-d G:i:s')])
-    ->withModificationData(['date_modified' => gmdate('Y-m-d G:i:s')]);
+    ->withModificationData(['date_modified' => gmdate('Y-m-d G:i:s')])
     ->withDeletionTimestamp('deleted');
 ```
 
