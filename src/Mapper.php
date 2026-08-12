@@ -9,6 +9,9 @@ use PicoDb\Table;
 
 class Mapper
 {
+    /**
+     * @var array<string, callable[]>
+     */
     private array $hooks = [];
 
     /**

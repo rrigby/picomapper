@@ -7,6 +7,9 @@ use Override;
 use PicoDb\Database;
 use PicoDb\Table;
 
+/**
+ * @phpstan-consistent-constructor
+ */
 class Mapping extends Table
 {
     /**
@@ -22,7 +25,7 @@ class Mapping extends Table
     /**
      * Mapping constructor.
      *
-     * @param callable[] $hooks
+     * @param array<string, callable[]> $hooks
      */
     public function __construct(Database $db, protected Definition $definition, array $columns = [], protected array $hooks = [])
     {
@@ -637,7 +640,7 @@ class Mapping extends Table
      *
      * @return array
      */
-    private function buildColumns()
+    private function buildColumns(): string|array
     {
         $columns = $this->prefixTableNameTo($this->definition->getPrimaryKey());
         $required = array_merge($this->definition->getColumns(), $this->columns);
@@ -704,23 +707,19 @@ class Mapping extends Table
      *      ['field', 'field2'] -> ['table.field', 'table.field2']
      *      ['field', ['field2', 'field3']] -> ['table.field', ['table.field2', 'table.field3']]
      *
-     * @return string | array
+     * @param string|array $input
      */
-    private function prefixTableNameTo($input)
+    private function prefixTableNameTo($input): string|array
     {
         $table = $this->definition->getTable();
         if (is_string($input)) {
             return $this->requiresPrefix($input) ? "$table.$input" : $input;
         }
 
-        if (is_array($input)) {
-            $output = [];
-            foreach ($input as $value) {
-                $output[] = $this->prefixTableNameTo($value);
-            }
-            return $output;
+        $output = [];
+        foreach ($input as $value) {
+            $output[] = $this->prefixTableNameTo($value);
         }
-
-        return $input;
+        return $output;
     }
 }
