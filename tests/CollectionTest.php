@@ -2,26 +2,28 @@
 
 namespace PicoMapper;
 
-class CollectionTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\TestCase;
+
+class CollectionTest extends TestCase
 {
-    public function testFirstReturnsMatch()
+    public function testFirstReturnsMatch(): void
     {
         $result = Collection::first(
             [['a' => 1], ['a' => 2], ['a' => 3]],
-            fn($x) => $x['a'] === 2
+            fn($x): bool => $x['a'] === 2
         );
 
         $this->assertEquals(['a' => 2], $result);
     }
 
-    public function testFirstReturnsNullWhenNoMatch()
+    public function testFirstReturnsNullWhenNoMatch(): void
     {
-        $result = Collection::first([['a' => 1]], fn($x) => $x['a'] === 99);
+        $result = Collection::first([['a' => 1]], fn($x): bool => $x['a'] === 99);
 
         $this->assertNull($result);
     }
 
-    public function testGroupBucketsByKey()
+    public function testGroupBucketsByKey(): void
     {
         $result = Collection::group(
             [['type' => 'a', 'v' => 1], ['type' => 'b', 'v' => 2], ['type' => 'a', 'v' => 3]],
@@ -32,7 +34,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $this->assertCount(1, $result['b']);
     }
 
-    public function testDiffByKeysReturnsNonMatching()
+    public function testDiffByKeysReturnsNonMatching(): void
     {
         $a = [['id' => 1], ['id' => 2], ['id' => 3]];
         $b = [['id' => 2]];
@@ -42,7 +44,7 @@ class CollectionTest extends \PHPUnit\Framework\TestCase
         $this->assertCount(2, $result);
     }
 
-    public function testIntersectByKeysReturnsMatching()
+    public function testIntersectByKeysReturnsMatching(): void
     {
         $a = [['id' => 1, 'label' => 'A'], ['id' => 2, 'label' => 'B']];
         $b = [['id' => 2]];

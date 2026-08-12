@@ -1,75 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace PicoMapper;
 
 class Property
 {
-    /**
-     * @var string
-     */
-    private $name;
+    private ?string $joinTable = null;
 
-    /**
-     * @var bool
-     */
-    private $collection = false;
+    private ?string $joinLocalColumn = null;
 
-    /**
-     * @var Definition
-     */
-    private $definition;
-
-    /**
-     * @var string
-     */
-    private $localColumn;
-
-    /**
-     * @var string
-     */
-    private $foreignColumn;
-
-    /**
-     * @var string|null
-     */
-    private $joinTable;
-
-    /**
-     * @var string|null
-     */
-    private $joinLocalColumn;
-
-    /**
-     * @var string|null
-     */
-    private $joinForeignColumn;
+    private ?string $joinForeignColumn = null;
 
     /**
      * Property constructor.
-     *
-     * @param string     $name
-     * @param bool       $collection
-     * @param Definition $definition
-     * @param string     $localColumn
-     * @param string     $foreignColumn
      */
-    public function __construct(string $name, bool $collection, Definition $definition, string $localColumn, string $foreignColumn)
+    public function __construct(private string $name, private bool $collection, private Definition $definition, private string $localColumn, private string $foreignColumn)
     {
-        $this->name = $name;
-        $this->collection = $collection;
-        $this->definition = $definition;
-        $this->localColumn = $localColumn;
-        $this->foreignColumn = $foreignColumn;
     }
 
     /**
      * Adds a join to the definition.
-     *
-     * @param string $table
-     * @param string $localColumn
-     * @param string $foreignColumn
      */
-    public function join(string $table, string $localColumn, string $foreignColumn)
+    public function join(string $table, string $localColumn, string $foreignColumn): void
     {
         $this->joinTable = $table;
         $this->joinLocalColumn = $localColumn;
@@ -78,80 +31,64 @@ class Property
 
     /**
      * Returns the property's name.
-     *
-     * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
 
     /**
      * Returns true if the property is a collection.
-     *
-     * @return bool
      */
-    public function isCollection()
+    public function isCollection(): bool
     {
         return $this->collection;
     }
 
     /**
      * Returns the definition used to fetch the property.
-     *
-     * @return Definition
      */
-    public function getDefinition()
+    public function getDefinition(): Definition
     {
         return $this->definition;
     }
 
     /**
      * Returns the local column name.
-     *
-     * @return string
      */
-    public function getLocalColumn()
+    public function getLocalColumn(): string
     {
         return $this->localColumn;
     }
 
     /**
      * Returns the foreign column name.
-     *
-     * @return string
      */
-    public function getForeignColumn()
+    public function getForeignColumn(): string
     {
         return $this->foreignColumn;
     }
 
     /**
      * Returns the join table.
-     *
-     * @return string|null
      */
-    public function getJoinTable()
+    public function getJoinTable(): ?string
     {
         return $this->joinTable;
     }
 
     /**
      * Returns the join's local column.
-     *
-     * @return string|null
      */
-    public function getJoinLocalColumn()
+    public function getJoinLocalColumn(): ?string
     {
         return $this->joinLocalColumn;
     }
 
     /**
      * Returns the join's foreign column.
-     *
-     * @return string|null
      */
-    public function getJoinForeignColumn()
+    public function getJoinForeignColumn(): ?string
     {
         return $this->joinForeignColumn;
     }

@@ -2,6 +2,7 @@
 
 namespace PicoMapper;
 
+use Exception;
 use Override;
 use PicoDb\Database;
 use PicoDb\Table;
@@ -9,19 +10,9 @@ use PicoDb\Table;
 class Mapping extends Table
 {
     /**
-     * @var Definition
-     */
-    protected $definition;
-
-    /**
      * @var string[]
      */
-    protected $columns = [];
-
-    /**
-     * @var callable[]
-     */
-    protected $hooks = [];
+    protected array $columns = [];
 
     /**
      * @var int|null
@@ -31,18 +22,13 @@ class Mapping extends Table
     /**
      * Mapping constructor.
      *
-     * @param Database   $db
-     * @param Definition $definition
-     * @param array      $columns
      * @param callable[] $hooks
      */
-    public function __construct(Database $db, Definition $definition, array $columns = [], array $hooks = [])
+    public function __construct(Database $db, protected Definition $definition, array $columns = [], protected array $hooks = [])
     {
-        $this->definition = $definition;
         $this->columns = $columns;
-        $this->hooks = $hooks;
 
-        parent::__construct($db, $definition->getTable());
+        parent::__construct($db, $this->definition->getTable());
     }
 
     /**
@@ -146,7 +132,6 @@ class Mapping extends Table
     /**
      * Sums a column across all matching rows.
      *
-     * @param string $column
      * @return float
      */
     #[Override]
@@ -162,7 +147,6 @@ class Mapping extends Table
     /**
      * Maps the provided array into the database.
      *
-     * @param array $data
      * @return boolean
      */
     public function insert(array $data)
@@ -232,11 +216,10 @@ class Mapping extends Table
     /**
      * Maps the provided array into the database.
      *
-     * @param array $data
      * @return boolean
      * @throws MappingException
      */
-    public function update(array $data = array())
+    public function update(array $data = [])
     {
         $primaryKey = $this->definition->getPrimaryKey();
 
@@ -280,7 +263,7 @@ class Mapping extends Table
             ]);
 
             return true;
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             if ($useTransaction) {
                 $this->db->cancelTransaction();
             }
@@ -292,7 +275,6 @@ class Mapping extends Table
     /**
      * Maps the provided array into the database.
      *
-     * @param array $data
      * @return bool
      * @throws MappingException
      */
@@ -348,7 +330,7 @@ class Mapping extends Table
             }
 
             return true;
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             if ($useTransaction) {
                 $this->db->cancelTransaction();
             }
@@ -361,11 +343,10 @@ class Mapping extends Table
      * Replaces existing data in the database and returns IDs for
      * deletion.
      *
-     * @param array $data
-     * @param array $original
-     * @param array $deleteIds
      * @return array
      * @throws MappingException
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $original
      */
     private function replace(array $data, array $original, array $deleteIds = [])
     {
@@ -445,7 +426,7 @@ class Mapping extends Table
                     continue;
                 }
 
-                $originalItem = Collection::first($propertyOriginal, function ($original) use ($item, $propertyPrimary) {
+                $originalItem = Collection::first($propertyOriginal, function (array $original) use ($item, $propertyPrimary): bool {
                     foreach ($propertyPrimary as $column) {
                         if ($original[$column] != $item[$column]) {
                             return false;
@@ -469,12 +450,12 @@ class Mapping extends Table
      * @param array $ids
      * @throws MappingException
      */
-    private function delete($ids = [])
+    private function delete($ids = []): void
     {
         foreach ($ids as $table => $deleteColumns) {
             foreach ($deleteColumns as $deletion => $deletionContext) {
                 // Arrange values into groups based on all but the last key
-                $grouped = Collection::group($deletionContext['keys'], function (array $keys) {
+                $grouped = Collection::group($deletionContext['keys'], function (array $keys): string {
                     array_pop($keys);
                     return implode(':', $keys);
                 });
@@ -486,10 +467,7 @@ class Mapping extends Table
                         ->table($table);
 
                     $first = reset($group);
-
-                    // Determine column to use for IN condition
-                    end($first);
-                    $primary = key($first);
+                    $primary = array_key_last($first);
 
                     foreach ($first as $column => $value) {
                         if ($column !== $primary) {
@@ -507,12 +485,10 @@ class Mapping extends Table
 
                     if (in_array(null, $primaryValues)) {
                         $query->isNull($primary);
-                        $primaryValues = array_filter($primaryValues, function ($value) {
-                            return !is_null($value);
-                        });
+                        $primaryValues = array_filter($primaryValues, fn($value): bool => !is_null($value));
                     }
 
-                    if (!empty($primaryValues)) {
+                    if ($primaryValues !== []) {
                         $query->in($primary, array_values($primaryValues));
                     }
 
@@ -541,12 +517,12 @@ class Mapping extends Table
      * Returns an associative array mapping table names to primary keys
      * constructed by recursively scanning data.
      *
-     * @param array $data
      * @param array $list
      * @return array<string, array<string, array{
      *     keys: list<array<string, mixed>>,
      *     data: array<string, mixed>
      * }>>
+     * @param array<string, mixed> $data
      */
     private function collectPrimary(array $data = [], $list = [])
     {
@@ -586,13 +562,10 @@ class Mapping extends Table
 
     /**
      * Maps the provided data onto an array.
-     *
-     * @param array $data
-     * @return array
      */
-    private function map(array $data)
+    private function map(array $data): array
     {
-        if (empty($data)) {
+        if ($data === []) {
             return [];
         }
 
@@ -600,7 +573,7 @@ class Mapping extends Table
         foreach ($this->definition->getProperties() as $property) {
             $mapping = new static($this->db, $property->getDefinition(), [$property->getForeignColumn()]);
 
-            $localValues = array_unique(array_filter(array_column($data, $property->getLocalColumn()), fn($v) => $v !== null));
+            $localValues = array_unique(array_filter(array_column($data, $property->getLocalColumn()), fn($v): bool => $v !== null));
 
             if ($property->getJoinTable()) {
                 $mapping->columns[] = sprintf('%s.%s', $property->getJoinTable(), $property->getJoinForeignColumn());
@@ -616,7 +589,7 @@ class Mapping extends Table
             $results = $mapping
                 ->findAll();
 
-            $properties[$property->getName()] = array_map(fn($group) => array_values($group), Collection::group($results, fn ($result) => $result[$groupColumn]));
+            $properties[$property->getName()] = array_map(fn($group): array => array_values($group), Collection::group($results, fn ($result) => $result[$groupColumn]));
         }
 
         $mapped = [];
@@ -642,10 +615,9 @@ class Mapping extends Table
      * Returns a copy of the provided data containing only the columns
      * present in the mapping's definition.
      *
-     * @param array $data
-     * @return array
+     * @param array<string, mixed> $data
      */
-    private function getBaseData(array $data)
+    private function getBaseData(array $data): array
     {
         $columns = array_merge(
             $this->columns,
@@ -675,7 +647,7 @@ class Mapping extends Table
         }
 
         foreach (array_unique($required) as $column) {
-            if (strpos($column, '.') === false) {
+            if (!str_contains($column, '.')) {
                 $columns[] = sprintf('%s.%s', $this->definition->getTable(), $column);
             } else {
                 $columns[] = $column;
@@ -688,11 +660,9 @@ class Mapping extends Table
     /**
      * Dispatches an event to registered hooks.
      *
-     * @param string $event
-     * @param array  $data
-     * @param array  $args
+     * @param array<int, mixed[]>|mixed[] $args
      */
-    private function dispatch(string $event, array $data, $args = [])
+    private function dispatch(string $event, array $data, array $args = []): void
     {
         if (empty($this->hooks[$event])) {
             return;
@@ -715,9 +685,6 @@ class Mapping extends Table
 
     /**
      * Checks if string is a valid SQL column name and has no table prefix.
-     *
-     * @param string $column
-     * @return bool
      */
     private function requiresPrefix(string $column): bool
     {
@@ -742,16 +709,15 @@ class Mapping extends Table
     private function prefixTableNameTo($input)
     {
         $table = $this->definition->getTable();
-
         if (is_string($input)) {
             return $this->requiresPrefix($input) ? "$table.$input" : $input;
-        } elseif (is_array($input)) {
-            $output = [];
+        }
 
+        if (is_array($input)) {
+            $output = [];
             foreach ($input as $value) {
                 $output[] = $this->prefixTableNameTo($value);
             }
-
             return $output;
         }
 

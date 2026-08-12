@@ -2,79 +2,57 @@
 
 namespace PicoMapper;
 
+use LogicException;
+
 class Definition
 {
-    /**
-     * @var string
-     */
-    private $table;
+    private bool $autoIncrement = false;
+
+    private bool $readOnly = false;
 
     /**
      * @var string[]
      */
-    private $primaryKey = [];
-
-    /**
-     * @var bool
-     */
-    private $autoIncrement = false;
-
-    /**
-     * @var bool
-     */
-    private $readOnly = false;
-
-    /**
-     * @var string[]
-     */
-    private $columns = [];
+    private array $columns = [];
 
     /**
      * @var Property[]
      */
-    private $properties = [];
+    private array $properties = [];
+
+    private ?string $deletionTimestamp = null;
 
     /**
-     * @var string|null
+     * @var mixed[]
      */
-    private $deletionTimestamp;
+    private array $deletionData = [];
 
     /**
-     * @var array
+     * @var mixed[]
      */
-    private $deletionData = [];
+    private array $creationData = [];
 
     /**
-     * @var array
+     * @var mixed[]
      */
-    private $creationData = [];
-
-    /**
-     * @var array
-     */
-    private $modificationData = [];
+    private array $modificationData = [];
 
     /**
      * Definition constructor.
      *
-     * @param string   $table
      * @param string[] $primaryKey
      */
-    public function __construct(string $table, array $primaryKey = ['id'])
+    public function __construct(private string $table, private array $primaryKey = ['id'])
     {
-        $this->table = $table;
-        $this->primaryKey = $primaryKey;
     }
 
     /**
      * Configures the primary key to use auto increment.
-     *
-     * @return Definition
      */
-    public function useAutoIncrement()
+    public function useAutoIncrement(): static
     {
         if (count($this->primaryKey) > 1) {
-            throw new \LogicException('Auto increment can only be used for non-composite primary keys.');
+            throw new LogicException('Auto increment can only be used for non-composite primary keys.');
         }
 
         $this->autoIncrement = true;
@@ -83,10 +61,8 @@ class Definition
 
     /**
      * Sets read-only mode to true.
-     *
-     * @return Definition
      */
-    public function readOnly()
+    public function readOnly(): static
     {
         $this->readOnly = true;
         return $this;
@@ -94,11 +70,8 @@ class Definition
 
     /**
      * Adds columns to be mapped.
-     *
-     * @param string ...$columns
-     * @return Definition
      */
-    public function withColumns(string ...$columns)
+    public function withColumns(string ...$columns): static
     {
         $this->columns = array_merge($this->columns, $columns);
         return $this;
@@ -106,14 +79,8 @@ class Definition
 
     /**
      * Adds a one-to-one relationship.
-     *
-     * @param Definition $definition
-     * @param string     $name
-     * @param string     $foreignColumn
-     * @param string     $localColumn
-     * @return Definition
      */
-    public function withOne(Definition $definition, string $name, string $foreignColumn, string $localColumn = 'id')
+    public function withOne(Definition $definition, string $name, string $foreignColumn, string $localColumn = 'id'): static
     {
         $this->properties[] = new Property($name, false, $definition, $localColumn, $foreignColumn);
         return $this;
@@ -121,14 +88,8 @@ class Definition
 
     /**
      * Adds a one-to-many relationship.
-     *
-     * @param Definition $definition
-     * @param string     $name
-     * @param string     $foreignColumn
-     * @param string     $localColumn
-     * @return Definition
      */
-    public function withMany(Definition $definition, string $name, string $foreignColumn, string $localColumn = 'id')
+    public function withMany(Definition $definition, string $name, string $foreignColumn, string $localColumn = 'id'): static
     {
         $this->properties[] = new Property($name, true, $definition, $localColumn, $foreignColumn);
         return $this;
@@ -136,17 +97,8 @@ class Definition
 
     /**
      * Adds a one-to-one relationship through a joined table.
-     *
-     * @param Definition $definition
-     * @param string $name
-     * @param string $foreignColumn
-     * @param string $localColumn
-     * @param string $joinTable
-     * @param string $joinForeignColumn
-     * @param string $joinLocalColumn
-     * @return Definition
      */
-    public function withOneByJoin(Definition $definition, string $name, string $foreignColumn, string $localColumn, string $joinTable, string $joinForeignColumn, string $joinLocalColumn)
+    public function withOneByJoin(Definition $definition, string $name, string $foreignColumn, string $localColumn, string $joinTable, string $joinForeignColumn, string $joinLocalColumn): static
     {
         $property = new Property($name, false, $definition, $localColumn, $foreignColumn);
         $property->join($joinTable, $joinLocalColumn, $joinForeignColumn);
@@ -157,17 +109,8 @@ class Definition
 
     /**
      * Adds a one-to-many relationship through a joined table.
-     *
-     * @param Definition $definition
-     * @param string $name
-     * @param string $foreignColumn
-     * @param string $localColumn
-     * @param string $joinTable
-     * @param string $joinForeignColumn
-     * @param string $joinLocalColumn
-     * @return Definition
      */
-    public function withManyByJoin(Definition $definition, string $name, string $foreignColumn, string $localColumn, string $joinTable, string $joinForeignColumn, string $joinLocalColumn)
+    public function withManyByJoin(Definition $definition, string $name, string $foreignColumn, string $localColumn, string $joinTable, string $joinForeignColumn, string $joinLocalColumn): static
     {
         $property = new Property($name, true, $definition, $localColumn, $foreignColumn);
         $property->join($joinTable, $joinLocalColumn, $joinForeignColumn);
@@ -178,11 +121,8 @@ class Definition
 
     /**
      * Sets the timestamp column used to signify if a record is deleted.
-     *
-     * @param string $column
-     * @return Definition
      */
-    public function withDeletionTimestamp(string $column)
+    public function withDeletionTimestamp(string $column): static
     {
         $this->deletionTimestamp = $column;
         return $this;
@@ -190,9 +130,6 @@ class Definition
 
     /**
      * Sets an array of table data to be included when a record is removed.
-     * 
-     * @param array $data
-     * @return Definition
      */
     public function withDeletionData(array $data): self
     {
@@ -202,11 +139,8 @@ class Definition
 
     /**
      * Sets an array of table data to be included when a record is inserted.
-     *
-     * @param array $data
-     * @return Definition
      */
-    public function withCreationData(array $data)
+    public function withCreationData(array $data): static
     {
         $this->creationData = $data;
         return $this;
@@ -214,11 +148,8 @@ class Definition
 
     /**
      * Sets an array of table data to be included when a record is modified.
-     *
-     * @param array $data
-     * @return Definition
      */
-    public function withModificationData(array $data)
+    public function withModificationData(array $data): static
     {
         $this->modificationData = $data;
         return $this;
@@ -226,10 +157,8 @@ class Definition
 
     /**
      * Returns the definition's base table.
-     *
-     * @return string
      */
-    public function getTable()
+    public function getTable(): string
     {
         return $this->table;
     }
@@ -239,27 +168,23 @@ class Definition
      *
      * @return string[]
      */
-    public function getPrimaryKey()
+    public function getPrimaryKey(): array
     {
         return $this->primaryKey;
     }
 
     /**
      * Returns the definition's readonly status.
-     *
-     * @return bool
      */
-    public function isReadOnly()
+    public function isReadOnly(): bool
     {
         return $this->readOnly;
     }
 
     /**
      * Returns true if the primary key is configured for auto increment.
-     *
-     * @return bool
      */
-    public function isAutoIncrement()
+    public function isAutoIncrement(): bool
     {
         return $this->autoIncrement;
     }
@@ -269,7 +194,7 @@ class Definition
      *
      * @return string[]
      */
-    public function getColumns()
+    public function getColumns(): array
     {
         return $this->columns;
     }
@@ -279,7 +204,7 @@ class Definition
      *
      * @return Property[]
      */
-    public function getProperties()
+    public function getProperties(): array
     {
         return $this->properties;
     }
@@ -287,10 +212,8 @@ class Definition
     /**
      * Returns the name of the timestamp column used to signify if a record is deleted,
      * otherwise null.
-     *
-     * @return null|string
      */
-    public function getDeletionTimestamp()
+    public function getDeletionTimestamp(): ?string
     {
         return $this->deletionTimestamp;
     }
@@ -298,9 +221,9 @@ class Definition
     /**
      * Returns an array of table data to be included when a record is removed.
      *
-     * @return array
+     * @return mixed[]
      */
-    public function getDeletionData()
+    public function getDeletionData(): array
     {
         return $this->deletionData;
     }
@@ -308,9 +231,9 @@ class Definition
     /**
      * Returns an array of table data to be included when a record is inserted.
      *
-     * @return array
+     * @return mixed[]
      */
-    public function getCreationData()
+    public function getCreationData(): array
     {
         return $this->creationData;
     }
@@ -318,9 +241,9 @@ class Definition
     /**
      * Returns an array of table data to be included when a record is modified.
      *
-     * @return array
+     * @return mixed[]
      */
-    public function getModificationData()
+    public function getModificationData(): array
     {
         return $this->modificationData;
     }

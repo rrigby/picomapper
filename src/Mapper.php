@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace PicoMapper;
 
 use PicoDb\Database;
@@ -7,33 +9,19 @@ use PicoDb\Table;
 
 class Mapper
 {
-    /**
-     * @var Database
-     */
-    private $db;
-
-    /**
-     * @var array
-     */
-    private $hooks = [];
+    private array $hooks = [];
 
     /**
      * Mapper constructor.
-     *
-     * @param Database $db
      */
-    function __construct(Database $db)
+    public function __construct(private Database $db)
     {
-        $this->db = $db;
     }
 
     /**
      * Returns a mapping for the provided definition.
-     *
-     * @param Definition $definition
-     * @return Mapping
      */
-    public function mapping(Definition $definition)
+    public function mapping(Definition $definition): Mapping
     {
         return new Mapping($this->db, $definition, [], $this->hooks);
     }
@@ -41,7 +29,6 @@ class Mapper
     /**
      * Returns a table object.
      *
-     * @param string $table
      * @return Table
      */
     public function table(string $table)
@@ -81,11 +68,8 @@ class Mapper
 
     /**
      * Registers a new hook.
-     *
-     * @param string   $event
-     * @param callable $hook
      */
-    public function registerHook(string $event, callable $hook)
+    public function registerHook(string $event, callable $hook): void
     {
         $this->hooks[$event][] = $hook;
     }

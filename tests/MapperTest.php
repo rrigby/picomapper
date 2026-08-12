@@ -1,20 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace PicoMapper;
 
+use PHPUnit\Framework\TestCase;
 use PicoDb\Database;
 
-class MapperTest extends \PHPUnit\Framework\TestCase
+class MapperTest extends TestCase
 {
-    /**
-     * @var Mapper
-     */
-    private $mapper;
+    private ?Mapper $mapper;
 
-    /**
-     * @var Database
-     */
-    private $db;
+    private ?Database $db;
 
     public function setUp(): void
     {
@@ -28,7 +25,7 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $this->db = null;
     }
 
-    public function testMapping()
+    public function testMapping(): void
     {
         $definition = new Definition('posts');
         $mapping = $this->mapper->mapping($definition);
@@ -36,4 +33,3 @@ class MapperTest extends \PHPUnit\Framework\TestCase
         $this->assertInstanceOf(Mapping::class, $mapping);
     }
 }
-

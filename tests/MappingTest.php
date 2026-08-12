@@ -2,26 +2,27 @@
 
 namespace PicoMapper;
 
+use PHPUnit\Framework\TestCase;
+use stdClass;
+use ReflectionMethod;
+use LogicException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PicoDb\Database;
 use PicoDb\SQLException;
 
-class MappingTest extends \PHPUnit\Framework\TestCase
+class MappingTest extends TestCase
 {
-    /**
-     * @var Database
-     */
-    private $db;
+    private ?Database $db;
 
     /**
      * @var callable|MockObject
      */
-    private $hook;
+    private ?MockObject $hook;
 
     public function setUp(): void
     {
         $this->db = new Database(['driver' => 'sqlite', 'filename' => ':memory:']);
-        $this->hook = $this->getMockBuilder(\stdClass::class)
+        $this->hook = $this->getMockBuilder(stdClass::class)
             ->setMethods(['__invoke'])
             ->getMock();
 
@@ -39,7 +40,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->hook = null;
     }
 
-    public function testFindAll()
+    public function testFindAll(): void
     {
         $customers = $this->getMapping()->findAll();
 
@@ -57,7 +58,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(10, $customers[1]['orders'][0]['discount']['amount']);
     }
 
-    public function testFindOne()
+    public function testFindOne(): void
     {
         $customer = $this->getMapping()->eq('id', 2)->findOne();
 
@@ -72,7 +73,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(400, $customer['orders'][0]['items'][1]['amount']);
     }
 
-    public function testCount()
+    public function testCount(): void
     {
         $this->assertSame(2, $this->getMapping()->count());
 
@@ -81,7 +82,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertSame(1, $this->getMapping()->count());
     }
 
-    public function testInsert()
+    public function testInsert(): void
     {
         $customer = [
             'id' => 3,
@@ -136,7 +137,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(230, $saved['orders'][0]['items'][1]['amount']);
     }
 
-    public function testUpdate()
+    public function testUpdate(): void
     {
         $customer = $this->getMapping()->eq('id', 1)->findOne();
         $original = $customer;
@@ -170,7 +171,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('Cheese', $saved['orders'][0]['items'][2]['description']);
     }
 
-    public function testRemove()
+    public function testRemove(): void
     {
         $this
             ->hook
@@ -192,20 +193,20 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    public function testExists()
+    public function testExists(): void
     {
         $this->assertTrue($this->getMapping()->eq('id', 1)->exists());
         $this->assertFalse($this->getMapping()->eq('id', 999)->exists());
     }
 
-    public function testExistsReturnsFalseForSoftDeletedRecord()
+    public function testExistsReturnsFalseForSoftDeletedRecord(): void
     {
         $this->getMapping()->eq('id', 1)->remove();
 
         $this->assertFalse($this->getMapping()->eq('id', 1)->exists());
     }
 
-    public function testFindAllByColumnExcludesSoftDeletedRecords()
+    public function testFindAllByColumnExcludesSoftDeletedRecords(): void
     {
         $this->getMapping()->eq('id', 1)->remove();
 
@@ -216,7 +217,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertContains('Jane Doe', $names);
     }
 
-    public function testFindOneColumnExcludesSoftDeletedRecords()
+    public function testFindOneColumnExcludesSoftDeletedRecords(): void
     {
         $this->getMapping()->eq('id', 1)->remove();
 
@@ -225,7 +226,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($name);
     }
 
-    public function testSumExcludesSoftDeletedRecords()
+    public function testSumExcludesSoftDeletedRecords(): void
     {
         $this->db->execute('CREATE TABLE scores (id INTEGER PRIMARY KEY, customer_id INTEGER, points INTEGER, date_deleted TEXT)');
         $this->db->execute('INSERT INTO scores (id, customer_id, points) VALUES (1, 1, 100), (2, 2, 200)');
@@ -241,7 +242,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertSame(200.0, (new Mapping($this->db, $score))->sum('points'));
     }
 
-    public function testReadOnlyInsert()
+    public function testReadOnlyInsert(): void
     {
         $customer = [
             'id' => 10,
@@ -276,7 +277,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertCount(0, $saved['orders'][0]['items']);
     }
 
-    public function testReadOnlyUpdate()
+    public function testReadOnlyUpdate(): void
     {
         $customer = $this->getReadOnlyMapping()->eq('id', 1)->findOne();
 
@@ -303,7 +304,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('Bacon', $saved['orders'][0]['items'][2]['description']);
     }
 
-    public function testInsertRollback()
+    public function testInsertRollback(): void
     {
         $customer = [
             'id' => 3,
@@ -334,7 +335,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
 
         try {
             $this->getMapping()->insert($customer);
-        } catch (SQLException $exception) {
+        } catch (SQLException) {
         }
 
         $this->assertFalse($this->db->getConnection()->inTransaction());
@@ -343,7 +344,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertNull($inserted);
     }
 
-    public function testInsertDuplicateThrowsException()
+    public function testInsertDuplicateThrowsException(): void
     {
         $this->expectException(SQLException::class);
         $this->expectExceptionMessage('UNIQUE constraint failed');
@@ -357,7 +358,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->getMapping()->insert($customer);
     }
 
-    public function testInsertDuplicateOfSoftDeletedRecordThrowsException()
+    public function testInsertDuplicateOfSoftDeletedRecordThrowsException(): void
     {
         $this->expectException(SQLException::class);
         $this->expectExceptionMessage('UNIQUE constraint failed');
@@ -373,7 +374,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->getMapping()->insert($customer);
     }
 
-    public function testInsertDuplicateChildrenThrowsException()
+    public function testInsertDuplicateChildrenThrowsException(): void
     {
         $this->expectException(SQLException::class);
         $this->expectExceptionMessage('UNIQUE constraint failed');
@@ -408,7 +409,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->getMapping()->insert($customer);
     }
 
-    public function testUpdateRollback()
+    public function testUpdateRollback(): void
     {
         $customer = $this->getMapping()->eq('id', 1)->findOne();
         $original = $customer;
@@ -431,14 +432,14 @@ class MappingTest extends \PHPUnit\Framework\TestCase
 
         try {
             $this->getMapping()->update($customer);
-        } catch (SQLException $exception) {
+        } catch (SQLException) {
         }
 
         $updated = $this->getMapping()->eq('id', 1)->findOne();
         $this->assertEquals($original, $updated);
     }
 
-    public function testUpdateThrowsExceptionWhenInsertingDuplicateChildrenRecords()
+    public function testUpdateThrowsExceptionWhenInsertingDuplicateChildrenRecords(): void
     {
         $this->expectException(SQLException::class);
         $this->expectExceptionMessage('UNIQUE constraint failed');
@@ -464,7 +465,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->getMapping()->update($customer);
     }
 
-    public function testUpdateDoesNotErrorWhenUpdatingDuplicateChildrenRecords()
+    public function testUpdateDoesNotErrorWhenUpdatingDuplicateChildrenRecords(): void
     {
         $customer = $this->getMapping()->eq('id', 1)->findOne();
         $original = $customer;
@@ -497,7 +498,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($updated['orders'][0]['items'][2]['amount'], 600);
     }
 
-    public function testUpdateThrowsMappingExceptionWhenMissingPrimaryKey()
+    public function testUpdateThrowsMappingExceptionWhenMissingPrimaryKey(): void
     {
         $this->expectException(MappingException::class);
         $this->expectExceptionMessage('Failed to update record. Missing primary key column: id');
@@ -509,7 +510,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->getMapping()->update($customer);
     }
 
-    public function testUpdateThrowsMappingExceptionWhenOriginalNotFound()
+    public function testUpdateThrowsMappingExceptionWhenOriginalNotFound(): void
     {
         $this->expectException(MappingException::class);
         $this->expectExceptionMessage('Failed to update record. Original not found.');
@@ -522,7 +523,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->getMapping()->update($customer);
     }
 
-    public function testSaveThrowsMappingExceptionWhenMissingPrimaryKey()
+    public function testSaveThrowsMappingExceptionWhenMissingPrimaryKey(): void
     {
         $this->expectException(MappingException::class);
         $this->expectExceptionMessage('Failed to save record. Missing primary key column: id');
@@ -534,9 +535,9 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->getMapping()->save($customer);
     }
 
-    public function testPrefixAndRemoveTableName()
+    public function testPrefixAndRemoveTableName(): void
     {
-        $method = new \ReflectionMethod('PicoMapper\Mapping', 'prefixTableNameTo');
+        $method = new ReflectionMethod(Mapping::class, 'prefixTableNameTo');
         $method->setAccessible(true);
 
         // Test with string input
@@ -570,7 +571,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($expectedOutput, $actualOutput);
     }
 
-    public function testFindOneWithDirectJoin()
+    public function testFindOneWithDirectJoin(): void
     {
         $customer = $this->getMapping()
             ->join('orders', 'customer_id', 'id')
@@ -588,7 +589,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(400, $customer['orders'][0]['items'][1]['amount']);
     }
 
-    public function testFindOneWithDirectLeft()
+    public function testFindOneWithDirectLeft(): void
     {
         $customer = $this->getMapping()
             ->left('orders', 'o', 'customer_id', 'customers', 'id')
@@ -606,7 +607,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(400, $customer['orders'][0]['items'][1]['amount']);
     }
 
-    public function testFindOneWithDirectAndSecondaryLeft()
+    public function testFindOneWithDirectAndSecondaryLeft(): void
     {
         $customer = $this->getMapping()
             ->left('orders', 'o', 'customer_id', 'customers', 'id')
@@ -625,7 +626,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(400, $customer['orders'][0]['items'][1]['amount']);
     }
 
-    public function testFindAllWithDuplicateLocalColumnValues()
+    public function testFindAllWithDuplicateLocalColumnValues(): void
     {
         $this->db->execute('CREATE TABLE categories (id INTEGER PRIMARY KEY, label TEXT)');
         $this->db->execute('CREATE TABLE products (id INTEGER PRIMARY KEY, category_id INTEGER, name TEXT)');
@@ -646,7 +647,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertNull($products[2]['category']);
     }
 
-    public function testFindAllWithManyAndNullableLocalColumn()
+    public function testFindAllWithManyAndNullableLocalColumn(): void
     {
         $this->db->execute('CREATE TABLE sections (id INTEGER PRIMARY KEY, name TEXT)');
         $this->db->execute('CREATE TABLE articles (id INTEGER PRIMARY KEY, section_id INTEGER, title TEXT)');
@@ -670,7 +671,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertCount(0, $articles[1]['tags']);
     }
 
-    public function testFindAllWithNullableLocalColumn()
+    public function testFindAllWithNullableLocalColumn(): void
     {
         $this->db->execute('CREATE TABLE categories (id INTEGER PRIMARY KEY, label TEXT)');
         $this->db->execute('CREATE TABLE products (id INTEGER PRIMARY KEY, category_id INTEGER, name TEXT)');
@@ -694,7 +695,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertNull($products[1]['category']);
     }
 
-    public function testFindAllWithOneByJoin()
+    public function testFindAllWithOneByJoin(): void
     {
         $orders = $this->getWithOneByJoinMapping()->findAll();
 
@@ -705,7 +706,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertNull($orders[2]['employee']);
     }
 
-    public function testFindOneWithOneByJoin()
+    public function testFindOneWithOneByJoin(): void
     {
         $order = $this->getWithOneByJoinMapping()->eq('id', 2)->findOne();
 
@@ -714,7 +715,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('Bob', $order['employee']['name']);
     }
 
-    public function testFindAllWithManyByJoin()
+    public function testFindAllWithManyByJoin(): void
     {
         $employees = $this->getWithManyByJoinMapping()->findAll();
 
@@ -729,7 +730,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('2018-01-02', $employees[1]['orders'][0]['date_created']);
     }
 
-    public function testFindOneWithManyByJoin()
+    public function testFindOneWithManyByJoin(): void
     {
         $employee = $this->getWithManyByJoinMapping()->eq('id', 1)->findOne();
 
@@ -739,7 +740,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('2018-01-01', $employee['orders'][0]['date_created']);
     }
 
-    public function testRemoveWithoutDeletionTimestampHardDeletes()
+    public function testRemoveWithoutDeletionTimestampHardDeletes(): void
     {
         $this->db->execute('CREATE TABLE widgets (id INTEGER PRIMARY KEY, name TEXT)');
         $this->db->execute("INSERT INTO widgets (id, name) VALUES (1, 'Widget')");
@@ -752,7 +753,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(0, $this->db->table('widgets')->count());
     }
 
-    public function testSaveInsertsWhenRecordDoesNotExist()
+    public function testSaveInsertsWhenRecordDoesNotExist(): void
     {
         $this->db->execute('CREATE TABLE widgets (id INTEGER PRIMARY KEY, name TEXT)');
 
@@ -762,7 +763,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('New', $this->db->table('widgets')->eq('id', 1)->findOneColumn('name'));
     }
 
-    public function testSaveUpdatesWhenRecordExists()
+    public function testSaveUpdatesWhenRecordExists(): void
     {
         $this->db->execute('CREATE TABLE widgets (id INTEGER PRIMARY KEY, name TEXT)');
         $this->db->execute("INSERT INTO widgets (id, name) VALUES (1, 'Original')");
@@ -773,14 +774,14 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('Renamed', $this->db->table('widgets')->eq('id', 1)->findOneColumn('name'));
     }
 
-    public function testUseAutoIncrementThrowsForCompositePrimaryKey()
+    public function testUseAutoIncrementThrowsForCompositePrimaryKey(): void
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
 
         (new Definition('some_table', ['a', 'b']))->useAutoIncrement();
     }
 
-    public function testRemoveWithCompositePrimaryKey()
+    public function testRemoveWithCompositePrimaryKey(): void
     {
         $definition = new Definition('orders_fulfillments', ['order_id', 'employee_id']);
         $mapping = new Mapping($this->db, $definition);
@@ -790,7 +791,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(0, $this->db->table('orders_fulfillments')->eq('order_id', 1)->count());
     }
 
-    public function testFindAllExcludesSoftDeletedChildRecords()
+    public function testFindAllExcludesSoftDeletedChildRecords(): void
     {
         $this->db->table('orders')->eq('id', 1)->update(['date_deleted' => '2024-01-01']);
 
@@ -800,7 +801,7 @@ class MappingTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(3, $customer['orders'][0]['id']);
     }
 
-    public function testInsertAppliesCreationData()
+    public function testInsertAppliesCreationData(): void
     {
         $this->db->execute('CREATE TABLE widgets (id INTEGER PRIMARY KEY, name TEXT, created_at TEXT)');
 
@@ -815,10 +816,8 @@ class MappingTest extends \PHPUnit\Framework\TestCase
 
     /**
      * Returns a new mapping for testing.
-     *
-     * @return Mapping
      */
-    public function getMapping()
+    public function getMapping(): Mapping
     {
         $discount = (new Definition('discounts'))
             ->withColumns('description', 'amount')
@@ -854,10 +853,8 @@ class MappingTest extends \PHPUnit\Framework\TestCase
 
     /**
      * Returns a mapping using withOneByJoin for testing.
-     *
-     * @return Mapping
      */
-    public function getWithOneByJoinMapping()
+    public function getWithOneByJoinMapping(): Mapping
     {
         $employee = (new Definition('employees'))
             ->withColumns('id', 'name');
@@ -871,10 +868,8 @@ class MappingTest extends \PHPUnit\Framework\TestCase
 
     /**
      * Returns a mapping using withManyByJoin for testing.
-     *
-     * @return Mapping
      */
-    public function getWithManyByJoinMapping()
+    public function getWithManyByJoinMapping(): Mapping
     {
         $order = (new Definition('orders'))
             ->withColumns('id', 'date_created');
@@ -888,10 +883,8 @@ class MappingTest extends \PHPUnit\Framework\TestCase
 
     /**
      * Returns a new mapping for testing.
-     *
-     * @return Mapping
      */
-    public function getReadOnlyMapping()
+    public function getReadOnlyMapping(): Mapping
     {
         $item = (new Definition('items'))
             ->withColumns('id', 'description', 'amount')
