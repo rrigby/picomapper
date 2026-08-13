@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace PicoMapper;
 
 use PHPUnit\Framework\TestCase;
@@ -10,7 +12,7 @@ class CollectionTest extends TestCase
     {
         $result = Collection::first(
             [['a' => 1], ['a' => 2], ['a' => 3]],
-            fn($x): bool => $x['a'] === 2
+            fn ($x): bool => $x['a'] === 2
         );
 
         $this->assertEquals(['a' => 2], $result);
@@ -18,7 +20,7 @@ class CollectionTest extends TestCase
 
     public function testFirstReturnsNullWhenNoMatch(): void
     {
-        $result = Collection::first([['a' => 1]], fn($x): bool => $x['a'] === 99);
+        $result = Collection::first([['a' => 1]], fn ($x): bool => $x['a'] === 99);
 
         $this->assertNull($result);
     }
@@ -27,7 +29,7 @@ class CollectionTest extends TestCase
     {
         $result = Collection::group(
             [['type' => 'a', 'v' => 1], ['type' => 'b', 'v' => 2], ['type' => 'a', 'v' => 3]],
-            fn($x) => $x['type']
+            fn ($x) => $x['type']
         );
 
         $this->assertCount(2, $result['a']);

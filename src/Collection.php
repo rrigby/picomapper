@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace PicoMapper;
 
 class Collection
@@ -46,7 +48,7 @@ class Collection
     {
         $keys = array_flip($keys);
 
-        return array_udiff($a, $b, fn($x, $y): int => implode(':', array_intersect_key($x, $keys)) <=> implode(':', array_intersect_key($y, $keys)));
+        return array_udiff($a, $b, fn ($x, $y): int => implode(':', array_intersect_key($x, $keys)) <=> implode(':', array_intersect_key($y, $keys)));
     }
 
     /**
@@ -59,6 +61,6 @@ class Collection
     {
         $keys = array_flip($keys);
 
-        return array_uintersect($a, $b, fn($x, $y): int => implode(':', array_intersect_key($x, $keys)) <=> implode(':', array_intersect_key($y, $keys)));
+        return array_uintersect($a, $b, fn ($x, $y): int => implode(':', array_intersect_key($x, $keys)) <=> implode(':', array_intersect_key($y, $keys)));
     }
 }

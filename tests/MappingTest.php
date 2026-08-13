@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace PicoMapper;
 
-use PHPUnit\Framework\TestCase;
-use stdClass;
-use ReflectionMethod;
 use LogicException;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use PicoDb\Database;
 use PicoDb\SQLException;
+use ReflectionMethod;
+use stdClass;
 
 class MappingTest extends TestCase
 {
@@ -238,7 +240,7 @@ class MappingTest extends TestCase
         $this->assertSame(300.0, (new Mapping($this->db, $score))->sum('points'));
 
         (new Mapping($this->db, $score))->eq('id', 1)->remove();
-        
+
         $this->assertSame(200.0, (new Mapping($this->db, $score))->sum('points'));
     }
 
@@ -494,7 +496,7 @@ class MappingTest extends TestCase
 
         // The last array entry for that item will be the one reflected in the database.
         $this->assertEquals($updated['orders'][0]['items'][2]['id'], 3);
-        $this->assertEquals($updated['orders'][0]['items'][2]['description'],  'Chocolate Bar');
+        $this->assertEquals($updated['orders'][0]['items'][2]['description'], 'Chocolate Bar');
         $this->assertEquals($updated['orders'][0]['items'][2]['amount'], 600);
     }
 

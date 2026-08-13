@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace PicoMapper;
 
 use Exception;
@@ -150,7 +152,7 @@ class Mapping extends Table
     /**
      * Maps the provided array into the database.
      *
-     * @return boolean
+     * @return bool
      */
     public function insert(array $data)
     {
@@ -219,7 +221,7 @@ class Mapping extends Table
     /**
      * Maps the provided array into the database.
      *
-     * @return boolean
+     * @return bool
      * @throws MappingException
      */
     public function update(array $data = [])
@@ -488,7 +490,7 @@ class Mapping extends Table
 
                     if (in_array(null, $primaryValues)) {
                         $query->isNull($primary);
-                        $primaryValues = array_filter($primaryValues, fn($value): bool => !is_null($value));
+                        $primaryValues = array_filter($primaryValues, fn ($value): bool => !is_null($value));
                     }
 
                     if ($primaryValues !== []) {
@@ -576,7 +578,7 @@ class Mapping extends Table
         foreach ($this->definition->getProperties() as $property) {
             $mapping = new static($this->db, $property->getDefinition(), [$property->getForeignColumn()]);
 
-            $localValues = array_unique(array_filter(array_column($data, $property->getLocalColumn()), fn($v): bool => $v !== null));
+            $localValues = array_unique(array_filter(array_column($data, $property->getLocalColumn()), fn ($v): bool => $v !== null));
 
             if ($property->getJoinTable()) {
                 $mapping->columns[] = sprintf('%s.%s', $property->getJoinTable(), $property->getJoinForeignColumn());
@@ -592,7 +594,7 @@ class Mapping extends Table
             $results = $mapping
                 ->findAll();
 
-            $properties[$property->getName()] = array_map(fn($group): array => array_values($group), Collection::group($results, fn ($result) => $result[$groupColumn]));
+            $properties[$property->getName()] = array_map(fn ($group): array => array_values($group), Collection::group($results, fn ($result) => $result[$groupColumn]));
         }
 
         $mapped = [];
