@@ -5,7 +5,7 @@
   "license": "MIT",
   "require": {
     "php": ">=8.0",
-    "rrigby/picodb": "^8.1.0"
+    "rrigby/picodb": "^9.0.0"
   },
   "config": {
     "platform": {

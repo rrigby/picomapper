@@ -14,34 +14,25 @@ use PicoDb\Table;
  */
 class Mapping extends Table
 {
-    /**
-     * @var string[]
-     */
-    protected array $columns = [];
-
-    /**
-     * @var int|null
-     */
-    protected $lastId;
+    protected ?int $lastId = null;
 
     /**
      * Mapping constructor.
      *
      * @param array<string, callable[]> $hooks
      */
-    public function __construct(Database $db, protected Definition $definition, array $columns = [], protected array $hooks = [])
+    public function __construct(Database $db, protected Definition $definition, /**
+     * @var string[]
+     */
+        protected array $columns = [], protected array $hooks = [])
     {
-        $this->columns = $columns;
-
         parent::__construct($db, $this->definition->getTable());
     }
 
     /**
      * Fetches and maps a single record.
-     *
-     * @return array|mixed|null
      */
-    public function findOne()
+    public function findOne(): ?array
     {
         if ($this->definition->getDeletionTimestamp()) {
             $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
@@ -51,7 +42,7 @@ class Mapping extends Table
         $this->limit(1);
         $records = parent::findAll();
 
-        if (empty($records)) {
+        if ($records === []) {
             return null;
         }
 
@@ -61,10 +52,8 @@ class Mapping extends Table
 
     /**
      * Fetches and maps all records.
-     *
-     * @return array
      */
-    public function findAll()
+    public function findAll(): array
     {
         if ($this->definition->getDeletionTimestamp()) {
             $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
@@ -76,10 +65,8 @@ class Mapping extends Table
 
     /**
      * Checks if any records exist matching the current conditions.
-     *
-     * @return bool
      */
-    public function exists()
+    public function exists(): bool
     {
         if ($this->definition->getDeletionTimestamp()) {
             $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
@@ -90,10 +77,8 @@ class Mapping extends Table
 
     /**
      * Counts all records.
-     *
-     * @return int
      */
-    public function count(string $column = '*')
+    public function count(string $column = '*'): int
     {
         if ($this->definition->getDeletionTimestamp()) {
             $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
@@ -104,12 +89,9 @@ class Mapping extends Table
 
     /**
      * Fetches all values for a single column.
-     *
-     * @param string $column
-     * @return mixed
      */
     #[Override]
-    public function findAllByColumn($column)
+    public function findAllByColumn(string $column): array
     {
         if ($this->definition->getDeletionTimestamp()) {
             $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
@@ -120,12 +102,9 @@ class Mapping extends Table
 
     /**
      * Fetches a single column value from the first matching row.
-     *
-     * @param string $column
-     * @return string|bool
      */
     #[Override]
-    public function findOneColumn($column)
+    public function findOneColumn(string $column): string|int|null|false
     {
         if ($this->definition->getDeletionTimestamp()) {
             $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
@@ -140,7 +119,7 @@ class Mapping extends Table
      * @return float
      */
     #[Override]
-    public function sum(string $column)
+    public function sum(string $column): float|int
     {
         if ($this->definition->getDeletionTimestamp()) {
             $this->isNull($this->prefixTableNameTo($this->definition->getDeletionTimestamp()));
@@ -151,10 +130,8 @@ class Mapping extends Table
 
     /**
      * Maps the provided array into the database.
-     *
-     * @return bool
      */
-    public function insert(array $data)
+    public function insert(array $data): bool
     {
         $base = array_merge(
             $this->getBaseData($data),
@@ -221,10 +198,9 @@ class Mapping extends Table
     /**
      * Maps the provided array into the database.
      *
-     * @return bool
      * @throws MappingException
      */
-    public function update(array $data = [])
+    public function update(array $data = []): bool
     {
         $primaryKey = $this->definition->getPrimaryKey();
 
@@ -280,10 +256,9 @@ class Mapping extends Table
     /**
      * Maps the provided array into the database.
      *
-     * @return bool
      * @throws MappingException
      */
-    public function save(array $data)
+    public function save(array $data): bool
     {
         $primaryKey = $this->definition->getPrimaryKey();
 
@@ -305,10 +280,9 @@ class Mapping extends Table
     /**
      * Removes data matching the condition.
      *
-     * @return bool
      * @throws MappingException
      */
-    public function remove()
+    public function remove(): bool
     {
         $data = $this->findAll();
         $ids = [];

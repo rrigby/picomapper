@@ -31,40 +31,32 @@ class Mapper
 
     /**
      * Returns a table object.
-     *
-     * @return Table
      */
-    public function table(string $table)
+    public function table(string $table): Table
     {
         return $this->db->table($table);
     }
 
     /**
      * Begins a database transaction.
-     *
-     * @return bool
      */
-    public function startTransaction()
+    public function startTransaction(): bool
     {
         return $this->db->startTransaction();
     }
 
     /**
      * Commits a database transaction.
-     *
-     * @return bool
      */
-    public function closeTransaction()
+    public function closeTransaction(): bool
     {
         return $this->db->closeTransaction();
     }
 
     /**
      * Returns database log messages.
-     *
-     * @return array
      */
-    public function getLogMessages()
+    public function getLogMessages(): array
     {
         return $this->db->getLogMessages();
     }
